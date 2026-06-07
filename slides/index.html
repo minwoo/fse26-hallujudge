@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HalluJudge — FSE Companion '26</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117; --surface: #1a1d27; --border: #2e3350;
+  --accent: #4f8ef7; --accent-ok: #34d399; --accent-warn: #f59e0b;
+  --text: #e2e8f0; --text-muted: #8892a4;
+  --font-head: 'DM Serif Display', Georgia, serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  /* palette tints (rgba of the hues above) */
+  --accent-2: #a78bfa;
+  --danger: #f87171;
+  --accent-soft: rgba(79,142,247,0.10);
+  --ok-soft: rgba(52,211,153,0.10);
+  --warn-soft: rgba(245,158,11,0.12);
+  --danger-soft: rgba(248,113,113,0.10);
+  --violet-soft: rgba(167,139,250,0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+
+/* ---- viewport + scaling stage ---- */
+.viewport {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(1100px 700px at 18% -8%, rgba(79,142,247,0.10), transparent 60%),
+    radial-gradient(900px 620px at 110% 120%, rgba(167,139,250,0.08), transparent 55%),
+    var(--bg);
+  overflow: hidden;
+}
+.stage {
+  width: 1200px; height: 675px;
+  position: relative;
+  transform-origin: center center;
+  background: var(--bg);
+  box-shadow: 0 30px 90px rgba(0,0,0,0.55);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* ---- slides ---- */
+.slide {
+  position: absolute; inset: 0;
+  opacity: 0; transform: translateY(16px);
+  pointer-events: none;
+  padding: 52px 64px 60px;
+  display: flex; flex-direction: column;
+}
+/* fade armed only after first paint, so the deck opens instantly */
+.ready .slide { transition: opacity 0.3s ease, transform 0.3s ease; }
+.slide.active { opacity: 1; transform: translateY(0); pointer-events: all; }
+
+/* ---- typography ---- */
+.slide { font-size: 16pt; line-height: 1.5; }
+h1 { font-family: var(--font-head); font-weight: 400; font-size: 52pt; line-height: 1.04; letter-spacing: -0.5px; }
+h2 { font-family: var(--font-head); font-weight: 400; font-size: 30pt; line-height: 1.12; letter-spacing: -0.3px; }
+.kicker {
+  font-size: 12pt; font-weight: 600; letter-spacing: 2.2px; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 14px; display: inline-flex; gap: 10px; align-items: center;
+}
+.kicker.ok { color: var(--accent-ok); }
+.kicker.warn { color: var(--accent-warn); }
+.text-lg { font-size: 20pt; } .text-xl { font-size: 24pt; } .text-2xl { font-size: 30pt; }
+.muted { color: var(--text-muted); }
+.mono { font-family: var(--font-mono); }
+.accent { color: var(--accent); } .ok { color: var(--accent-ok); } .warn { color: var(--accent-warn); } .danger { color: var(--danger); }
+strong, b { font-weight: 600; color: #f3f6fb; }
+.head { margin-bottom: 22px; flex: 0 0 auto; }
+.body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+
+/* ---- lists ---- */
+ul.clean { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+ul.clean > li { position: relative; padding-left: 28px; }
+ul.clean > li::before {
+  content: ""; position: absolute; left: 4px; top: 0.62em;
+  width: 8px; height: 8px; border-radius: 2px; background: var(--accent); transform: rotate(45deg);
+}
+ul.clean > li.ok::before { background: var(--accent-ok); }
+ul.clean > li.warn::before { background: var(--accent-warn); }
+ul.clean > li.danger::before { background: var(--danger); }
+
+/* ---- result boxes ---- */
+.result-box {
+  border-left: 3px solid var(--accent); background: var(--accent-soft);
+  padding: 0.75rem 1rem; border-radius: 0 8px 8px 0;
+}
+.result-box.best { border-color: var(--accent-ok); background: var(--ok-soft); }
+.result-box.warn { border-color: var(--accent-warn); background: var(--warn-soft); }
+
+/* ---- generic cards / grids ---- */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px 20px;
+}
+.grid { display: grid; gap: 16px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 7px 16px; font-size: 13pt;
+}
+.chip .n { font-family: var(--font-mono); font-weight: 500; color: var(--accent); }
+.chip.ok .n { color: var(--accent-ok); }
+.chip.warn .n { color: var(--accent-warn); }
+.pill { font-family: var(--font-mono); font-size: 11pt; padding: 3px 9px; border-radius: 6px;
+        background: var(--accent-soft); color: var(--accent); border: 1px solid var(--border); }
+
+/* ---- tables ---- */
+.rtable { width: 100%; border-collapse: collapse; font-size: 13pt; }
+.rtable th {
+  text-align: left; color: var(--text-muted); font-weight: 600; font-size: 11.5pt;
+  letter-spacing: 0.4px; text-transform: uppercase; padding: 8px 12px; border-bottom: 1px solid var(--border);
+}
+.rtable td { padding: 9px 12px; border-bottom: 1px solid rgba(46,51,80,0.55); }
+.rtable td.num { font-family: var(--font-mono); text-align: right; }
+.rtable tr:last-child td { border-bottom: none; }
+.rtable tr.best { background: var(--ok-soft); }
+.rtable tr.best td { color: #eafaf3; }
+.rtable tr.best td:first-child { box-shadow: inset 3px 0 0 var(--accent-ok); }
+.rtable .mdl { font-size: 11pt; color: var(--text-muted); }
+
+/* ---- title slide ---- */
+.title-slide { justify-content: center; }
+.authors { font-size: 15pt; line-height: 1.7; color: var(--text-muted); }
+.authors b { color: var(--text); }
+.aff { font-size: 11.5pt; color: var(--text-muted); margin-top: 6px; }
+.stat-row { display: flex; gap: 14px; margin-top: 4px; flex-wrap: wrap; }
+a.arxiv {
+  color: var(--accent); text-decoration: none; font-family: var(--font-mono); font-size: 12.5pt;
+  border-bottom: 1px dashed rgba(79,142,247,0.5); padding-bottom: 1px;
+}
+a.arxiv:hover { color: #7fb0ff; }
+
+/* ---- code / diff ---- */
+.code {
+  font-family: var(--font-mono); font-size: 12pt; line-height: 1.6;
+  background: #0b0d13; border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; overflow: hidden;
+}
+.code .add { color: var(--accent-ok); } .code .del { color: var(--danger); } .code .ctx { color: var(--text-muted); }
+.code .ln { color: #4a5168; user-select: none; margin-right: 10px; }
+
+/* ---- scoring gradient strip ---- */
+.scale-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+.scale-cell { padding: 18px 16px 20px; position: relative; }
+.scale-cell .lvl { font-family: var(--font-mono); font-size: 26pt; font-weight: 500; }
+.scale-cell .lbl { font-size: 12pt; margin-top: 6px; color: var(--text); font-weight: 600; }
+.scale-cell .sub { font-size: 10.5pt; color: var(--text-muted); margin-top: 3px; line-height: 1.35; }
+.sc0 { background: rgba(52,211,153,0.16); } .sc0 .lvl { color: var(--accent-ok); }
+.sc1 { background: rgba(52,211,153,0.09); } .sc1 .lvl { color: #7fe3c0; }
+.sc2 { background: rgba(245,158,11,0.12); } .sc2 .lvl { color: var(--accent-warn); }
+.sc3 { background: rgba(248,113,113,0.10); } .sc3 .lvl { color: #f9a3a3; }
+.sc4 { background: rgba(248,113,113,0.18); } .sc4 .lvl { color: var(--danger); }
+
+/* ---- interactive branch cards (Tree of Thoughts) ---- */
+.branch {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px 18px; cursor: pointer; transition: border-color .2s, background .2s;
+  border-left: 3px solid var(--accent);
+}
+.branch:hover { border-color: var(--accent); background: #1d2130; }
+.branch .bhead { display: flex; align-items: center; gap: 12px; }
+.branch .bnum { font-family: var(--font-mono); font-size: 13pt; color: var(--accent);
+  width: 30px; height: 30px; flex: 0 0 auto; display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--accent-soft); }
+.branch .btitle { font-weight: 600; font-size: 15pt; }
+.branch .toggle { margin-left: auto; color: var(--text-muted); font-family: var(--font-mono); font-size: 16pt; transition: transform .2s; }
+.branch.open .toggle { transform: rotate(45deg); }
+.branch .bdetail {
+  max-height: 0; opacity: 0; overflow: hidden;
+  transition: max-height .28s ease, opacity .28s ease, margin .28s ease;
+  font-size: 12.5pt; color: var(--text-muted); line-height: 1.5;
+}
+.branch.open .bdetail { max-height: 120px; opacity: 1; margin-top: 10px; }
+
+/* ---- pipeline ---- */
+.pipe { display: flex; align-items: stretch; gap: 0; }
+.pipe .stagebox {
+  flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px 18px; text-align: center; display: flex; flex-direction: column; justify-content: center; gap: 6px;
+}
+.pipe .stagebox.mid { border-color: var(--accent); background: var(--accent-soft); }
+.pipe .stagebox .t { font-weight: 600; font-size: 14pt; }
+.pipe .stagebox .s { font-size: 11pt; color: var(--text-muted); }
+.pipe .arrow { display: grid; place-items: center; color: var(--accent); font-size: 22pt; padding: 0 12px; }
+
+/* ---- SVG chart bar animation ---- */
+rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bottom;
+  transition: transform 0.75s cubic-bezier(.22,1,.36,1); }
+.slide.active rect.bar { transform: scaleY(1); }
+.chart-val { opacity: 0; transition: opacity .4s ease .5s; }
+.slide.active .chart-val { opacity: 1; }
+
+/* ---- chrome: footer / progress / nav ---- */
+.footer {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 36px;
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 22px; font-size: 10.5pt; color: var(--text-muted);
+  border-top: 1px solid rgba(46,51,80,0.5); background: rgba(15,17,23,0.4);
+}
+.footer .ftitle { font-weight: 600; letter-spacing: 0.3px; }
+.footer .spacer { flex: 1; }
+.footer .counter { font-family: var(--font-mono); }
+.nav { display: flex; gap: 6px; }
+.nav button {
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+  width: 26px; height: 22px; border-radius: 6px; cursor: pointer; font-size: 12pt; line-height: 1;
+  display: grid; place-items: center; transition: color .15s, border-color .15s;
+}
+.nav button:hover { color: var(--accent); border-color: var(--accent); }
+.progress { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent);
+  width: 0; transition: width .3s ease; z-index: 5; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: stretch; }
+.center { text-align: center; }
+.tag { font-size: 11pt; color: var(--text-muted); font-family: var(--font-mono); }
+.lead { font-size: 19pt; line-height: 1.45; }
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+<div class="viewport">
+  <div class="stage" id="stage">
+
+    <!-- 1. TITLE -->
+    <section class="slide title-slide">
+      <div class="kicker">FSE'26 · Montréal, QC · July 5–9, 2026</div>
+      <h1>HalluJudge</h1>
+      <p class="text-xl muted" style="margin-top:14px; max-width:980px; line-height:1.35;">
+        A Reference-Free Hallucination Detection for<br>Context Misalignment in Code Review Automation
+      </p>
+      <div class="divider" style="max-width:980px; margin:26px 0 22px;"></div>
+      <p class="authors" style="max-width:980px;">
+        Kla Tantithamthavorn<sup>1</sup> · Hong Yi Lin<sup>2</sup> · Patanamon Thongtanunam<sup>2</sup> ·
+        Wachiraphan Charoenwet<sup>2</sup> · <b>Minwoo Jeong<sup>3</sup></b> · Ming Wu<sup>3</sup>
+      </p>
+      <p class="aff"><sup>1</sup> Monash University &nbsp;·&nbsp; <sup>2</sup> The University of Melbourne &nbsp;·&nbsp; <sup>3</sup> Atlassian</p>
+      <div class="stat-row" style="margin-top:26px;">
+        <span class="chip ok"><span class="n">F1 0.85</span> detection</span>
+        <span class="chip"><span class="n">$0.009</span> per judgment</span>
+        <span class="chip warn"><span class="n">67%</span> developer alignment</span>
+      </div>
+      <p style="margin-top:24px;"><a class="arxiv interactive" href="https://arxiv.org/abs/2601.19072" target="_blank" rel="noopener">arXiv:2601.19072</a></p>
+    </section>
+
+    <!-- 2. MOTIVATION -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">Motivation</div>
+        <h2>LLMs review code at scale — but can their feedback be trusted?</h2>
+      </div>
+      <div class="body">
+        <div class="two-col" style="align-items:center;">
+          <ul class="clean">
+            <li>LLM reviewers are now in production: Atlassian's <strong>RovoDev Code Reviewer</strong> serves <strong>4,000+ engineers</strong> — <strong>40,000+ comments / month</strong> across <strong>2,500 repositories</strong>.</li>
+            <li>They produce fluent, plausible comments — and some are <strong>hallucinated</strong>: ungrounded, irrelevant, or misaligned with the actual code change.</li>
+            <li class="danger">Hallucinated feedback <strong>erodes trust</strong>, causes confusion, and hinders adoption.</li>
+            <li class="warn">Unlike code <em>generation</em>, review hallucinations can't be caught by a compiler or runtime — they must be <em>judged</em>.</li>
+          </ul>
+          <div class="result-box warn" style="padding:20px 24px;">
+            <div class="text-lg" style="margin-bottom:8px;">The risk isn't wrong <em>code</em>.</div>
+            <div class="text-lg">It's <strong class="warn">confident, wrong feedback</strong> reaching a developer who must decide whether to believe it.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. THE PROBLEM -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">The Problem</div>
+        <h2>Context misalignment</h2>
+        <p class="muted" style="margin-top:6px;">Comments that are syntactically valid and stylistically appropriate — yet <strong>semantically inconsistent</strong> with the code change.</p>
+      </div>
+      <div class="body">
+        <div class="two-col">
+          <div>
+            <p class="tag" style="margin-bottom:8px;">THE DIFF — sync → async conversion</p>
+            <div class="code">
+              <div><span class="ln">12</span><span class="ctx"> public Response fetch(Request r) {</span></div>
+              <div><span class="ln">13</span><span class="del">-  return client.call(r);</span></div>
+              <div><span class="ln">13</span><span class="add">+  return client.callAsync(r).join();</span></div>
+              <div><span class="ln">14</span><span class="ctx"> }</span></div>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div>
+              <p class="tag" style="margin-bottom:8px;">THE GENERATED COMMENT</p>
+              <div class="card" style="border-left:3px solid var(--danger);">
+                <span class="danger">“This change may expose a <strong>SQL injection</strong> vulnerability — validate and sanitize the query input.”</span>
+              </div>
+            </div>
+            <div class="result-box" style="border-color:var(--danger); background:var(--danger-soft);">
+              <strong class="danger">Ungrounded.</strong> No SQL query was modified anywhere in the diff. The claim is fluent, but <strong>nothing in the change entails it</strong>.
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px; text-align:center; border-style:dashed;">
+          A claim is <strong>grounded</strong> only if the diff <em>fully entails</em> it — partial correctness is insufficient.
+          A review is <strong class="danger">hallucinated</strong> when it contains <strong>≥ 1 ungrounded claim</strong>.
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. WHY EXISTING METHODS FAIL -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">The Gap</div>
+        <h2>Why existing evaluation falls short</h2>
+      </div>
+      <div class="body">
+        <div class="grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:20px;">
+          <div class="card">
+            <div class="pill" style="margin-bottom:10px;">Reference-based</div>
+            <div style="font-weight:600; margin-bottom:6px;">BLEU · Exact Match</div>
+            <p class="muted" style="font-size:13pt;">Measure <strong>lexical overlap</strong>, not semantic grounding — and require a gold reference comment that rarely exists.</p>
+          </div>
+          <div class="card">
+            <div class="pill" style="margin-bottom:10px;">Reference-free NLP</div>
+            <div style="font-weight:600; margin-bottom:6px;">Generic metrics</div>
+            <p class="muted" style="font-size:13pt;">Perform <strong>poorly</strong> at detecting hallucinations in code-review comments.</p>
+          </div>
+          <div class="card">
+            <div class="pill" style="margin-bottom:10px;">Manual review</div>
+            <div style="font-weight:600; margin-bottom:6px;">Human annotation</div>
+            <p class="muted" style="font-size:13pt;"><strong>Expensive, subjective</strong>, and difficult to reproduce at scale.</p>
+          </div>
+        </div>
+        <div class="result-box best" style="padding:18px 22px;">
+          <span class="text-lg">We need a <strong>reference-free judge</strong> that reasons about whether each claim is grounded in the code change <em>itself</em>.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. HALLUJUDGE OVERVIEW -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">Approach</div>
+        <h2>HalluJudge — hallucination as a context-alignment problem</h2>
+      </div>
+      <div class="body">
+        <div class="pipe" style="margin-bottom:22px;">
+          <div class="stagebox">
+            <div class="t">Inputs</div>
+            <div class="s">Code diff&nbsp;+&nbsp;generated review comment</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="stagebox mid">
+            <div class="t accent">HalluJudge</div>
+            <div class="s">Assessment strategy&nbsp;×&nbsp;LLM judge</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="stagebox">
+            <div class="t">Output</div>
+            <div class="s">Alignment score 0–4&nbsp;+&nbsp;evidence-based explanation</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <ul class="clean">
+            <li><strong>Reference-free</strong> — no gold comment required.</li>
+            <li>Asks: is each claim <strong>supported by, traceable to, and consistent with</strong> the code change?</li>
+          </ul>
+          <ul class="clean">
+            <li class="ok"><strong>Grounding:</strong> a claim is grounded only if the diff <em>fully entails</em> it (partial ≠ grounded).</li>
+            <li class="danger"><strong>Hallucination:</strong> a review with <strong>≥ 1 ungrounded claim</strong>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. SCORING SCALE -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">Scoring</div>
+        <h2>A 0–4 alignment scale</h2>
+      </div>
+      <div class="body">
+        <div class="scale-strip">
+          <div class="scale-cell sc0"><div class="lvl">0</div><div class="lbl">Fully aligned</div><div class="sub">All claims directly supported &amp; consistent</div></div>
+          <div class="scale-cell sc1"><div class="lvl">1</div><div class="lbl">Mostly aligned</div><div class="sub">Minor inconsistencies present</div></div>
+          <div class="scale-cell sc2"><div class="lvl">2</div><div class="lbl">Partially aligned</div><div class="sub">Mixed support</div></div>
+          <div class="scale-cell sc3"><div class="lvl">3</div><div class="lbl">Mostly misaligned</div><div class="sub">Minimal support</div></div>
+          <div class="scale-cell sc4"><div class="lvl">4</div><div class="lbl">Completely misaligned</div><div class="sub">Unsupported or contradicted</div></div>
+        </div>
+        <div class="two-col" style="margin-top:22px;">
+          <div class="result-box best">
+            <strong class="ok">Score 0</strong> → grounded, <strong>non-hallucinated</strong>.
+          </div>
+          <div class="result-box" style="border-color:var(--danger); background:var(--danger-soft);">
+            <strong class="danger">Scores 1–4</strong> → increasing misalignment; any ungrounded claim marks the review <strong>hallucinated</strong>.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. FOUR STRATEGIES -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">Approach</div>
+        <h2>Four assessment strategies</h2>
+        <p class="muted" style="margin-top:6px;">All reference-free — they differ in reasoning depth versus cost.</p>
+      </div>
+      <div class="body">
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:600;" class="text-lg">1 · Direct</span><span class="pill">zero-shot</span>
+            </div>
+            <p class="muted" style="font-size:13pt; margin-top:8px;">Out-of-the-box reasoning with system + user prompt only. Lowest cost.</p>
+          </div>
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:600;" class="text-lg">2 · Few-Shot</span><span class="pill">5 examples</span>
+            </div>
+            <p class="muted" style="font-size:13pt; margin-top:8px;">Five labeled examples — one per score level (0–4) — to sharpen decision boundaries.</p>
+          </div>
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:600;" class="text-lg">3 · Multi-Step Reasoning</span><span class="pill">chain-of-thought</span>
+            </div>
+            <p class="muted" style="font-size:13pt; margin-top:8px;">Comprehension → traceability → support → conflict/relevance → completeness → judgment.</p>
+          </div>
+          <div class="card" style="border-color:var(--accent-ok); background:var(--ok-soft);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:600;" class="text-lg ok">4 · Tree of Thoughts</span><span class="pill" style="color:var(--accent-ok); background:var(--ok-soft);">parallel ★</span>
+            </div>
+            <p class="muted" style="font-size:13pt; margin-top:8px;">Four complementary hypothesis branches, then converge on the strongest evidence path.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. TREE OF THOUGHTS (interactive) -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker ok">Approach · Best performer</div>
+        <h2>Tree of Thoughts — reason in parallel, then converge</h2>
+        <p class="muted" style="margin-top:6px;">Click a branch to expand. Converge via evidence weight · contradiction analysis · confidence · strongest-evidence path.</p>
+      </div>
+      <div class="body interactive">
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:14px;">
+          <div class="branch">
+            <div class="bhead"><span class="bnum">1</span><span class="btitle">Alignment Hypothesis</span><span class="toggle">+</span></div>
+            <div class="bdetail">Identify the diff elements that <em>support</em> each claim in the comment.</div>
+          </div>
+          <div class="branch">
+            <div class="bhead"><span class="bnum">2</span><span class="btitle">Misalignment Hypothesis</span><span class="toggle">+</span></div>
+            <div class="bdetail">Find unsupported claims, contradictions, or assumptions drawn from outside the change.</div>
+          </div>
+          <div class="branch">
+            <div class="bhead"><span class="bnum">3</span><span class="btitle">Evidence Mapping</span><span class="toggle">+</span></div>
+            <div class="bdetail">Build explicit trace links between each comment sentence and specific diff elements.</div>
+          </div>
+          <div class="branch">
+            <div class="bhead"><span class="bnum">4</span><span class="btitle">Context Boundaries</span><span class="toggle">+</span></div>
+            <div class="bdetail">Verify every claim stays within the intended scope of the change.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. STUDY DESIGN -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">Study Design</div>
+        <h2>Evaluated on Atlassian enterprise projects</h2>
+      </div>
+      <div class="body">
+        <div class="two-col" style="margin-bottom:16px;">
+          <div class="card">
+            <div class="pill" style="margin-bottom:10px;">RQ1–2 · Annotation set</div>
+            <ul class="clean" style="font-size:13.5pt; gap:8px;">
+              <li><strong>143</strong> LLM comments · <strong>97</strong> merged PRs · <strong>14</strong> projects</li>
+              <li>5 languages: Java, Python, JS, TS, Kotlin · change types Add / Modify</li>
+              <li>3 SE-researcher annotators · Cohen's κ <strong>0.78–0.84</strong></li>
+              <li><strong>32</strong> hallucinated (22%) / <strong>111</strong> not (78%)</li>
+            </ul>
+          </div>
+          <div class="card">
+            <div class="pill" style="margin-bottom:10px;">RQ3 · Production set</div>
+            <ul class="clean" style="font-size:13.5pt; gap:8px;">
+              <li class="ok"><strong>557</strong> comments with developer 👍 / 👎</li>
+              <li>From RovoDev Code Reviewer over <strong>3 months</strong></li>
+              <li><strong>370</strong> (65%) received a thumbs-up</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card" style="display:flex; gap:26px; align-items:center; flex-wrap:wrap;">
+          <div><span class="tag">JUDGES</span><br><strong>Gemini 3</strong> <span class="muted">(1M ctx)</span> &nbsp;·&nbsp; <strong>GPT-5.1</strong> <span class="muted">(400K ctx)</span> &nbsp;→&nbsp; <strong>8 configs</strong> <span class="muted">(4 strategies × 2 models)</span></div>
+          <div style="margin-left:auto;"><span class="tag">PRODUCTION GENERATORS</span><br><span class="muted">Claude-Sonnet-4 · Qwen3-Coder · GPT-5</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. RESEARCH QUESTIONS -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">Research Questions</div>
+        <h2>Three questions</h2>
+      </div>
+      <div class="body">
+        <div class="grid" style="gap:16px;">
+          <div class="card" style="display:flex; gap:20px; align-items:center; border-left:3px solid var(--accent);">
+            <span class="mono accent text-2xl" style="flex:0 0 70px;">RQ1</span>
+            <div><strong class="text-lg">Effectiveness.</strong> &nbsp;How well do the strategies detect hallucinations? <span class="muted">— Precision · Recall · F1</span></div>
+          </div>
+          <div class="card" style="display:flex; gap:20px; align-items:center; border-left:3px solid var(--accent-warn);">
+            <span class="mono warn text-2xl" style="flex:0 0 70px;">RQ2</span>
+            <div><strong class="text-lg">Efficiency.</strong> &nbsp;What is the token and dollar cost per judgment? <span class="muted">— tokens · $ / inference</span></div>
+          </div>
+          <div class="card" style="display:flex; gap:20px; align-items:center; border-left:3px solid var(--accent-ok);">
+            <span class="mono ok text-2xl" style="flex:0 0 70px;">RQ3</span>
+            <div><strong class="text-lg">Alignment.</strong> &nbsp;Do judgments match developer preferences in production? <span class="muted">— consistency · coverage vs 👍/👎</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. RQ1 RESULTS (chart) -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">RQ1 · Effectiveness</div>
+        <h2>Tree of Thoughts + Gemini 3 → F1 <span class="ok">0.85</span></h2>
+      </div>
+      <div class="body">
+        <div class="two-col" style="grid-template-columns:1.35fr 1fr; align-items:center;">
+          <div>
+            <svg viewBox="0 0 760 330" width="100%" role="img" aria-label="F1 score by assessment strategy and model">
+              <!-- gridlines + y labels -->
+              <g font-family="JetBrains Mono, monospace" font-size="11" fill="#8892a4">
+                <line x1="44" y1="20"  x2="740" y2="20"  stroke="#2e3350"/><text x="38" y="24"  text-anchor="end">1.0</text>
+                <line x1="44" y1="85"  x2="740" y2="85"  stroke="#2e3350"/><text x="38" y="89"  text-anchor="end">.75</text>
+                <line x1="44" y1="150" x2="740" y2="150" stroke="#2e3350"/><text x="38" y="154" text-anchor="end">.50</text>
+                <line x1="44" y1="215" x2="740" y2="215" stroke="#2e3350"/><text x="38" y="219" text-anchor="end">.25</text>
+                <line x1="44" y1="280" x2="740" y2="280" stroke="#2e3350"/><text x="38" y="284" text-anchor="end">0</text>
+              </g>
+              <!-- bars: baseline y=280; y(v)=280-v*260 -->
+              <!-- Direct: G .82 / GPT .75 -->
+              <rect class="bar" x="80"  y="66.8" width="46" height="213.2" rx="3" fill="#4f8ef7"/>
+              <rect class="bar" x="129" y="85.0" width="46" height="195.0" rx="3" fill="#a78bfa"/>
+              <!-- Few-Shot: G .79 / GPT .67 -->
+              <rect class="bar" x="254" y="74.6" width="46" height="205.4" rx="3" fill="#4f8ef7"/>
+              <rect class="bar" x="303" y="105.8" width="46" height="174.2" rx="3" fill="#a78bfa"/>
+              <!-- Multi-Step: G .79 / GPT .74 -->
+              <rect class="bar" x="428" y="74.6" width="46" height="205.4" rx="3" fill="#4f8ef7"/>
+              <rect class="bar" x="477" y="87.6" width="46" height="192.4" rx="3" fill="#a78bfa"/>
+              <!-- Tree of Thought: G .85 (winner) / GPT .76 -->
+              <rect class="bar" x="602" y="59.0" width="46" height="221.0" rx="3" fill="#34d399"/>
+              <rect class="bar" x="651" y="82.4" width="46" height="197.6" rx="3" fill="#a78bfa"/>
+              <!-- value labels -->
+              <g class="chart-val" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="500" text-anchor="middle">
+                <text x="103" y="60"  fill="#cdd6e6">.82</text><text x="152" y="78"  fill="#cdd6e6">.75</text>
+                <text x="277" y="68"  fill="#cdd6e6">.79</text><text x="326" y="99"  fill="#cdd6e6">.67</text>
+                <text x="451" y="68"  fill="#cdd6e6">.79</text><text x="500" y="81"  fill="#cdd6e6">.74</text>
+                <text x="625" y="52"  fill="#34d399">.85</text><text x="674" y="76"  fill="#cdd6e6">.76</text>
+              </g>
+              <!-- x labels -->
+              <g font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#8892a4" text-anchor="middle">
+                <text x="127" y="303">Direct</text>
+                <text x="301" y="303">Few-Shot</text>
+                <text x="475" y="303">Multi-Step</text>
+                <text x="649" y="303" fill="#34d399" font-weight="600">Tree of Thought</text>
+              </g>
+              <!-- legend -->
+              <g font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#8892a4">
+                <rect x="250" y="318" width="12" height="12" rx="2" fill="#4f8ef7"/><text x="268" y="328">Gemini 3</text>
+                <rect x="370" y="318" width="12" height="12" rx="2" fill="#a78bfa"/><text x="388" y="328">GPT-5.1</text>
+              </g>
+            </svg>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div class="result-box best" style="padding:16px 20px;">
+              <div class="tag" style="color:var(--accent-ok);">BEST — TREE OF THOUGHTS · GEMINI 3</div>
+              <div class="mono text-lg" style="margin-top:6px;">P 0.85 &nbsp; R 0.85 &nbsp; <strong class="ok">F1 0.85</strong></div>
+            </div>
+            <ul class="clean" style="font-size:13.5pt;">
+              <li>Tree of Thoughts ranks <strong>1st</strong>, Direct <strong>2nd</strong> on both models.</li>
+              <li>Few-shot &amp; multi-step <strong>underperform</strong> despite higher cost.</li>
+              <li>Gemini 3 is more stable (F1 range 0.06 vs 0.09); variation is driven mainly by <strong>recall</strong>.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. RQ2 RESULTS -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker warn">RQ2 · Efficiency</div>
+        <h2>Effective <em>and</em> cheap — <span class="warn">$0.009</span> per judgment</h2>
+      </div>
+      <div class="body">
+        <div class="two-col" style="grid-template-columns:1.1fr 1fr;">
+          <table class="rtable">
+            <thead><tr><th>Strategy</th><th>Judge</th><th style="text-align:right;">Avg cost / judgment</th></tr></thead>
+            <tbody>
+              <tr class="best"><td>Direct</td><td class="mdl">Gemini 3</td><td class="num">$0.009</td></tr>
+              <tr><td>Direct</td><td class="mdl">GPT-5.1</td><td class="num">$0.004</td></tr>
+              <tr><td>+ Tree of Thoughts</td><td class="mdl">Gemini 3</td><td class="num">+$0.005</td></tr>
+              <tr><td>+ Tree of Thoughts</td><td class="mdl">GPT-5.1</td><td class="num">+$0.007</td></tr>
+              <tr><td>+ Multi-Step</td><td class="mdl">Gemini 3</td><td class="num">+$0.003</td></tr>
+              <tr><td>+ Few-Shot</td><td class="mdl">Gemini 3</td><td class="num">+$0.001</td></tr>
+            </tbody>
+          </table>
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <ul class="clean" style="font-size:13.5pt;">
+              <li>Direct uses ~<strong>2,784–3,315</strong> input and <strong>81–89</strong> output tokens.</li>
+              <li>Tree of Thoughts buys accuracy with extra reasoning tokens — the highest cost.</li>
+              <li class="muted" style="font-size:12pt;">Pricing /1M tokens (in/out): Gemini 3 $2.00 / $12.00 · GPT-5.1 $1.25 / $10.00</li>
+            </ul>
+            <div class="result-box warn">
+              <strong>Trade-off:</strong> Direct is the cheapest; <strong>Tree of Thoughts</strong> is the most accurate at the highest cost — both far below human annotation.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. RQ3 RESULTS -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker ok">RQ3 · Developer Alignment</div>
+        <h2>Aligned with real developer preferences</h2>
+      </div>
+      <div class="body">
+        <div class="two-col" style="grid-template-columns:1.25fr 1fr; align-items:center;">
+          <table class="rtable">
+            <thead><tr><th>Strategy</th><th>Judge</th><th style="text-align:right;">Consist.</th><th style="text-align:right;">Cover.</th><th style="text-align:right;">Avg</th></tr></thead>
+            <tbody>
+              <tr class="best"><td>Direct</td><td class="mdl">Gemini 3</td><td class="num">0.69</td><td class="num">0.65</td><td class="num"><strong>0.67</strong></td></tr>
+              <tr><td>Tree of Thoughts</td><td class="mdl">Gemini 3</td><td class="num">0.67</td><td class="num">0.65</td><td class="num">0.66</td></tr>
+              <tr><td>Multi-Step</td><td class="mdl">Gemini 3</td><td class="num">0.68</td><td class="num">0.63</td><td class="num">0.65</td></tr>
+              <tr><td>Few-Shot</td><td class="mdl">Gemini 3</td><td class="num">0.67</td><td class="num">0.62</td><td class="num">0.64</td></tr>
+              <tr><td>Tree of Thoughts</td><td class="mdl">GPT-5.1</td><td class="num">0.72</td><td class="num">0.54</td><td class="num">0.63</td></tr>
+              <tr><td>Multi-Step</td><td class="mdl">GPT-5.1</td><td class="num">0.70</td><td class="num">0.57</td><td class="num">0.63</td></tr>
+            </tbody>
+          </table>
+          <ul class="clean" style="font-size:13.5pt;">
+            <li class="ok">Up to <strong>72%</strong> of comments judged non-hallucinated also got a 👍 <span class="muted">(consistency)</span>.</li>
+            <li>Captures up to <strong>65%</strong> of all 👍 comments <span class="muted">(coverage)</span>.</li>
+            <li>ToT &amp; Direct with <strong>Gemini 3</strong> top again — consistent with the annotation results.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 14. DISCUSSION -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">Discussion</div>
+        <h2>What we learned</h2>
+      </div>
+      <div class="body">
+        <div class="grid" style="gap:16px;">
+          <div class="card">
+            <div style="font-weight:600;" class="text-lg">1 · Ensembling doesn't help</div>
+            <p class="muted" style="font-size:13.5pt; margin-top:8px;">
+              Averaging all four strategies scores <strong>F1 0.81</strong> (Gemini 3) and <strong>0.73</strong> (GPT-5.1) — both <strong>below Tree of Thoughts alone (0.85)</strong>.
+              The strategies don't provide complementary signals.
+            </p>
+          </div>
+          <div class="card" style="border-left:3px solid var(--accent-ok);">
+            <div style="font-weight:600;" class="text-lg ok">2 · Judgments are evidence-grounded</div>
+            <p class="muted" style="font-size:13.5pt; margin-top:8px;">
+              HalluJudge flags an invalid <span class="mono">isPresent()</span> suggestion by citing <span class="mono">length()</span> in the diff — the return type is <strong>String, not Optional</strong>.
+              Tree-of-Thoughts branches add <strong>causal analysis</strong> the direct strategy misses.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 15. IMPLICATIONS -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">Implications</div>
+        <h2>Why it matters</h2>
+      </div>
+      <div class="body">
+        <div class="two-col">
+          <div class="card" style="border-top:3px solid var(--accent);">
+            <div class="text-lg" style="font-weight:600; margin-bottom:8px;">A practical safeguard</div>
+            <p class="muted" style="font-size:14pt;">Drop HalluJudge in as a <strong>filtering / validation layer</strong> to keep plausible-but-wrong comments away from developers — directly addressing a key barrier to <strong>adoption and trust</strong>.</p>
+          </div>
+          <div class="card" style="border-top:3px solid var(--accent-ok);">
+            <div class="text-lg" style="font-weight:600; margin-bottom:8px;">Cost-effective &amp; explainable</div>
+            <p class="muted" style="font-size:14pt;">A <strong>$0.009</strong> alternative to expensive human annotation — with interpretable, <strong>evidence-based reasons</strong> behind every judgment.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 16. CONCLUSION -->
+    <section class="slide">
+      <div class="head">
+        <div class="kicker">Conclusion</div>
+        <h2>HalluJudge</h2>
+        <p class="muted text-lg" style="margin-top:6px;">The first reference-free hallucination detector for context-misaligned code-review comments — validated at enterprise scale against production developer signals.</p>
+      </div>
+      <div class="body">
+        <div class="grid" style="grid-template-columns:repeat(3,1fr); gap:16px;">
+          <div class="card center" style="border-bottom:3px solid var(--accent-ok);">
+            <div class="mono ok" style="font-size:34pt; font-weight:500;">0.85</div>
+            <div style="font-weight:600; margin-top:4px;">Effectiveness</div>
+            <div class="muted" style="font-size:12.5pt;">F1 — Tree of Thoughts + Gemini 3</div>
+          </div>
+          <div class="card center" style="border-bottom:3px solid var(--accent-warn);">
+            <div class="mono warn" style="font-size:34pt; font-weight:500;">$0.009</div>
+            <div style="font-weight:600; margin-top:4px;">Efficiency</div>
+            <div class="muted" style="font-size:12.5pt;">per hallucination detection</div>
+          </div>
+          <div class="card center" style="border-bottom:3px solid var(--accent);">
+            <div class="mono accent" style="font-size:34pt; font-weight:500;">67%</div>
+            <div style="font-weight:600; margin-top:4px;">Alignment</div>
+            <div class="muted" style="font-size:12.5pt;">avg agreement with developers</div>
+          </div>
+        </div>
+        <div class="result-box best" style="margin-top:20px; text-align:center; padding:16px 22px;">
+          <span class="text-lg">A practical safeguard that reduces developers' exposure to hallucinated comments — <strong>fostering trust in AI-assisted code review</strong>.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 17. THANK YOU / Q&A -->
+    <section class="slide title-slide center">
+      <div class="kicker" style="justify-content:center;">Thank you</div>
+      <h1 style="font-size:46pt;">Questions?</h1>
+      <div class="stat-row" style="justify-content:center; margin-top:26px;">
+        <span class="chip ok"><span class="n">F1 0.85</span></span>
+        <span class="chip"><span class="n">$0.009</span> / judgment</span>
+        <span class="chip warn"><span class="n">67%</span> dev alignment</span>
+      </div>
+      <p class="authors" style="margin-top:30px;">
+        Kla Tantithamthavorn · Hong Yi Lin · Patanamon Thongtanunam · Wachiraphan Charoenwet · <b>Minwoo Jeong</b> · Ming Wu
+      </p>
+      <p style="margin-top:18px;"><a class="arxiv interactive" href="https://arxiv.org/abs/2601.19072" target="_blank" rel="noopener">arXiv:2601.19072</a></p>
+      <p class="aff" style="margin-top:14px;">HalluJudge · FSE Companion '26 · Montréal, QC</p>
+    </section>
+
+    <!-- chrome -->
+    <div class="progress" id="progress"></div>
+    <div class="footer">
+      <span class="ftitle">HalluJudge</span>
+      <span class="muted">Reference-Free Hallucination Detection · FSE '26</span>
+      <span class="spacer"></span>
+      <span class="counter"><span id="cur">1</span> / <span id="total">17</span></span>
+      <span class="nav interactive">
+        <button id="prev" aria-label="Previous slide">‹</button>
+        <button id="next" aria-label="Next slide">›</button>
+      </span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ---------- scaling ---------- */
+const stage = document.getElementById('stage');
+function fit() {
+  const s = Math.min(window.innerWidth / 1200, window.innerHeight / 675);
+  stage.style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', fit);
+fit();
+
+/* ---------- navigation ---------- */
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+const curEl = document.getElementById('cur');
+const progress = document.getElementById('progress');
+document.getElementById('total').textContent = total;
+let cur = 0;
+
+function goTo(n) {
+  slides[cur].classList.remove('active');
+  cur = Math.max(0, Math.min(n, total - 1));
+  slides[cur].classList.add('active');
+  curEl.textContent = cur + 1;
+  progress.style.width = ((cur + 1) / total * 100) + '%';
+  history.replaceState(null, '', '#' + (cur + 1));
+}
+
+/* deep-link: open index.html#7 to jump straight to slide 7 */
+function slideFromHash() {
+  const n = parseInt((location.hash || '').slice(1), 10);
+  return Number.isFinite(n) ? n - 1 : 0;
+}
+window.addEventListener('hashchange', () => {
+  const n = slideFromHash();
+  if (n !== cur) goTo(n);
+});
+
+function toggleFs() {
+  if (document.fullscreenElement) document.exitFullscreen?.();
+  else document.documentElement.requestFullscreen?.();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.code === 'Space') { e.preventDefault(); goTo(cur + 1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); goTo(cur - 1); }
+  else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFs(); }
+  else if (e.key === 'Home') { goTo(0); }
+  else if (e.key === 'End') { goTo(total - 1); }
+});
+
+/* click anywhere advances, except on interactive widgets / links */
+document.addEventListener('click', e => {
+  if (e.target.closest('.interactive') || e.target.closest('a')) return;
+  goTo(cur + 1);
+});
+
+document.getElementById('next').addEventListener('click', () => goTo(cur + 1));
+document.getElementById('prev').addEventListener('click', () => goTo(cur - 1));
+
+/* ---------- Tree-of-Thoughts expandable branches ---------- */
+document.querySelectorAll('.branch').forEach(b => {
+  b.addEventListener('click', () => b.classList.toggle('open'));
+});
+
+goTo(slideFromHash());
+requestAnimationFrame(() => requestAnimationFrame(() => stage.classList.add('ready')));
+</script>
+</body>
+</html>
