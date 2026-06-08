@@ -287,12 +287,12 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
       <div class="head">
         <div class="kicker">The Problem</div>
         <h2>Context misalignment</h2>
-        <p class="muted" style="margin-top:6px;">Comments that are syntactically valid and stylistically appropriate — yet <strong>semantically inconsistent</strong> with the code change.</p>
+        <p class="muted" style="margin-top:6px;">A type of intrinsic error (contradiction with the input), where comments maybe syntactically valid and stylistically appropriate, but <strong>semantically inconsistent</strong> with the actual code change.</p>
       </div>
       <div class="body">
         <div class="two-col">
           <div>
-            <p class="tag" style="margin-bottom:8px;">THE DIFF — sync → async conversion</p>
+            <p class="tag" style="margin-bottom:8px;">THE CODE DIFF UNDER REVIEW</p>
             <div class="code">
               <div><span class="ln">12</span><span class="ctx"> public Response fetch(Request r) {</span></div>
               <div><span class="ln">13</span><span class="del">-  return client.call(r);</span></div>
@@ -302,7 +302,7 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
           </div>
           <div style="display:flex; flex-direction:column; gap:14px;">
             <div>
-              <p class="tag" style="margin-bottom:8px;">THE GENERATED COMMENT</p>
+              <p class="tag" style="margin-bottom:8px;">THE GENERATED CODE REVIEW COMMENT</p>
               <div class="card" style="border-left:3px solid var(--danger);">
                 <span class="danger">“This change may expose a <strong>SQL injection</strong> vulnerability — validate and sanitize the query input.”</span>
               </div>
@@ -329,13 +329,13 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
         <div class="grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:20px;">
           <div class="card">
             <div class="pill" style="margin-bottom:10px;">Reference-based</div>
-            <div style="font-weight:600; margin-bottom:6px;">BLEU · Exact Match</div>
-            <p class="muted" style="font-size:13pt;">Measure <strong>lexical overlap</strong>, not semantic grounding — and require a gold reference comment that rarely exists.</p>
+            <div style="font-weight:600; margin-bottom:6px;">e.g., BLEU, Exact Match</div>
+            <p class="muted" style="font-size:13pt;">Measure <strong>lexical overlap</strong>, not semantic grounding. Requires a gold reference comment that rarely exists. Cannot evaluate generated code reviews that deviate from the gold reference.</p>
           </div>
           <div class="card">
-            <div class="pill" style="margin-bottom:10px;">Reference-free NLP</div>
-            <div style="font-weight:600; margin-bottom:6px;">Generic metrics</div>
-            <p class="muted" style="font-size:13pt;">Perform <strong>poorly</strong> at detecting hallucinations in code-review comments.</p>
+            <div class="pill" style="margin-bottom:10px;">Traditional Reference-free</div>
+            <div style="font-weight:600; margin-bottom:6px;">e.g., feature attribution, uncertainty metrics</div>
+            <p class="muted" style="font-size:13pt;">Have been shown in past studies to perform <strong>poorly</strong> at detecting hallucinations in generated code review comments.</p>
           </div>
           <div class="card">
             <div class="pill" style="margin-bottom:10px;">Manual review</div>
@@ -344,7 +344,7 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
           </div>
         </div>
         <div class="result-box best" style="padding:18px 22px;">
-          <span class="text-lg">We need a <strong>reference-free judge</strong> that reasons about whether each claim is grounded in the code change <em>itself</em>.</span>
+          <span class="text-lg">We need a highly parameterized <strong>reference-free judge</strong> that is capable of reasoning about whether each claim is grounded in the code change <em>itself</em>.</span>
         </div>
       </div>
     </section>
@@ -359,26 +359,26 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
         <div class="pipe" style="margin-bottom:22px;">
           <div class="stagebox">
             <div class="t">Inputs</div>
-            <div class="s">Code diff&nbsp;+&nbsp;generated review comment</div>
+            <div class="s">Code Diff&nbsp;+&nbsp;Generated Review Comment</div>
           </div>
           <div class="arrow">→</div>
           <div class="stagebox mid">
             <div class="t accent">HalluJudge</div>
-            <div class="s">Assessment strategy&nbsp;×&nbsp;LLM judge</div>
+            <div class="s">Assessment Strategy&nbsp;×&nbsp;LLM Judges</div>
           </div>
           <div class="arrow">→</div>
           <div class="stagebox">
             <div class="t">Output</div>
-            <div class="s">Alignment score 0–4&nbsp;+&nbsp;evidence-based explanation</div>
+            <div class="s">Alignment Score&nbsp;+&nbsp;Evidence-based Explanation</div>
           </div>
         </div>
         <div class="two-col">
           <ul class="clean">
             <li><strong>Reference-free</strong> — no gold comment required.</li>
-            <li>Asks: is each claim <strong>supported by, traceable to, and consistent with</strong> the code change?</li>
+            <li>Asks: is each claim in the code review comment <strong>supported by, traceable to, and consistent with</strong> factual elements in the code change?</li>
           </ul>
           <ul class="clean">
-            <li class="ok"><strong>Grounding:</strong> a claim is grounded only if the diff <em>fully entails</em> it (partial ≠ grounded).</li>
+            <li class="ok"><strong>Grounding:</strong> a claim is grounded only if the code diff <em>fully entails</em> it (partial ≠ grounded).</li>
             <li class="danger"><strong>Hallucination:</strong> a review with <strong>≥ 1 ungrounded claim</strong>.</li>
           </ul>
         </div>
@@ -390,18 +390,20 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
       <div class="head">
         <div class="kicker">Scoring</div>
         <h2>A 0–4 alignment scale</h2>
+        <p class="muted" style="margin-top:6px;">An operational rubric to help the Judge reason through the decision.</p>
       </div>
       <div class="body">
         <div class="scale-strip">
           <div class="scale-cell sc0"><div class="lvl">0</div><div class="lbl">Fully aligned</div><div class="sub">All claims directly supported &amp; consistent</div></div>
-          <div class="scale-cell sc1"><div class="lvl">1</div><div class="lbl">Mostly aligned</div><div class="sub">Minor inconsistencies present</div></div>
-          <div class="scale-cell sc2"><div class="lvl">2</div><div class="lbl">Partially aligned</div><div class="sub">Mixed support</div></div>
-          <div class="scale-cell sc3"><div class="lvl">3</div><div class="lbl">Mostly misaligned</div><div class="sub">Minimal support</div></div>
-          <div class="scale-cell sc4"><div class="lvl">4</div><div class="lbl">Completely misaligned</div><div class="sub">Unsupported or contradicted</div></div>
+          <div class="scale-cell sc4"><div class="lvl">1</div><div class="lbl">Mostly aligned</div><div class="sub">Most claims are supported, minor inconsistencies</div></div>
+          <div class="scale-cell sc4"><div class="lvl">2</div><div class="lbl">Partially aligned</div><div class="sub">Some claims are supported, others are not</div></div>
+          <div class="scale-cell sc4"><div class="lvl">3</div><div class="lbl">Mostly misaligned</div><div class="sub">Very little support from the code diff</div></div>
+          <div class="scale-cell sc4"><div class="lvl">4</div><div class="lbl">Completely misaligned</div><div class="sub">Claims are unsupported or contradicted
+by the code diff</div></div>
         </div>
         <div class="two-col" style="margin-top:22px;">
           <div class="result-box best">
-            <strong class="ok">Score 0</strong> → grounded, <strong>non-hallucinated</strong>.
+            <strong class="ok">Score 0</strong> → grounded, <strong>non-hallucinated</strong>. We enforce a strict zero-tolerance policy toward inconsistencies in the generated review.
           </div>
           <div class="result-box" style="border-color:var(--danger); background:var(--danger-soft);">
             <strong class="danger">Scores 1–4</strong> → increasing misalignment; any ungrounded claim marks the review <strong>hallucinated</strong>.
@@ -429,13 +431,13 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="font-weight:600;" class="text-lg">2 · Few-Shot</span><span class="pill">5 examples</span>
             </div>
-            <p class="muted" style="font-size:13pt; margin-top:8px;">Five labeled examples — one per score level (0–4) — to sharpen decision boundaries.</p>
+            <p class="muted" style="font-size:13pt; margin-top:8px;">Five labeled examples - one per score level (0–4) to sharpen decision boundaries.</p>
           </div>
           <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="font-weight:600;" class="text-lg">3 · Multi-Step Reasoning</span><span class="pill">chain-of-thought</span>
             </div>
-            <p class="muted" style="font-size:13pt; margin-top:8px;">Comprehension → traceability → support → conflict/relevance → completeness → judgment.</p>
+            <p class="muted" style="font-size:13pt; margin-top:8px;">Guided reasoning - comprehension, traceability, support, conflict & relevance, completeness, final judgment.</p>
           </div>
           <div class="card" style="border-color:var(--accent-ok); background:var(--ok-soft);">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -448,31 +450,107 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
     </section>
 
     <!-- 8. TREE OF THOUGHTS (interactive) -->
-    <section class="slide">
+<section class="slide">
       <div class="head">
         <div class="kicker ok">Approach · Best performer</div>
-        <h2>Tree of Thoughts — reason in parallel, then converge</h2>
-        <p class="muted" style="margin-top:6px;">Click a branch to expand. Converge via evidence weight · contradiction analysis · confidence · strongest-evidence path.</p>
-      </div>
-      <div class="body interactive">
-        <div class="grid" style="grid-template-columns:1fr 1fr; gap:14px;">
-          <div class="branch">
-            <div class="bhead"><span class="bnum">1</span><span class="btitle">Alignment Hypothesis</span><span class="toggle">+</span></div>
-            <div class="bdetail">Identify the diff elements that <em>support</em> each claim in the comment.</div>
+        <div style="display: flex; gap: 24px; align-items: flex-start;">
+
+          <!-- Description (Left: Naturally grows vertically as horizontal space is reduced) -->
+          <div style="flex: 1; min-width: 0;">
+            <h2>Tree of Thoughts</h2>
+            <p class="muted" style="margin-top: 6px;">This strategy explicitly instructs an LLM to explore multiple reasoning paths in parallel and evaluate hypotheses before reaching the conclusion. Instead of following a single linear reasoning chain, the model branches into several possible lines of thought, reflects on their validity, and selects the most coherent path.</p>
           </div>
-          <div class="branch">
-            <div class="bhead"><span class="bnum">2</span><span class="btitle">Misalignment Hypothesis</span><span class="toggle">+</span></div>
-            <div class="bdetail">Find unsupported claims, contradictions, or assumptions drawn from outside the change.</div>
+
+          <!-- Prompt Box (Right: Now takes up more horizontal space) -->
+          <div style="flex: 0 0 470px;">
+            <div style="font-family: var(--font-mono); font-size: 10px; line-height: 1.55; color: var(--color-text-primary); border: 1.5px solid #2a7a2a; border-radius: var(--border-radius-md); overflow: hidden;">
+
+              <div style="padding: 10px 12px; border-bottom: 1px solid var(--color-border-tertiary);">
+                <span style="font-weight: 500;">[Task Description]</span> <span style="color: var(--color-text-secondary);">...</span><br>
+                <span style="font-weight: 500;">[Definition]</span> <span style="color: var(--color-text-secondary);">...</span><br>
+                <span style="font-weight: 500;">[Scoring Guide]</span> <span style="color: var(--color-text-secondary);">...</span>
+                <div style="margin-top: 8px;"><span style="font-weight: 500;">[Tree of Thoughts Process]</span> You will explore multiple reasoning paths simultaneously before making a final judgment.</div>
+              </div>
+
+              <div style="padding: 8px 12px; border-bottom: 1px solid var(--color-border-tertiary);">
+
+                <div class="branch-block" style="margin-bottom: 6px;">
+                  <div class="branch-toggle" style="cursor: pointer; display: flex; align-items: baseline; gap: 4px;">
+                    <span style="font-weight: 500;">Branch A: Alignment Hypothesis.</span>
+                    <span style="font-size: 9px; color: var(--color-text-secondary); margin-left: auto; user-select: none;">▶</span>
+                  </div>
+                  <div class="branch-body" style="display: none; margin-top: 4px; padding-left: 8px; border-left: 2px solid #c8e6c8; color: var(--color-text-secondary);">
+                    Assume the comment <strong>IS</strong> context-aligned. Find evidence: What specific diff elements support each claim in the comment? How do the comment’s suggestions relate to visible changes? ...
+                  </div>
+                </div>
+
+                <div class="branch-block" style="margin-bottom: 6px;">
+                  <div class="branch-toggle" style="cursor: pointer; display: flex; align-items: baseline; gap: 4px;">
+                    <span style="font-weight: 500;">Branch B: Misalignment Hypothesis.</span>
+                    <span style="font-size: 9px; color: var(--color-text-secondary); margin-left: auto; user-select: none;">▶</span>
+                  </div>
+                  <div class="branch-body" style="display: none; margin-top: 4px; padding-left: 8px; border-left: 2px solid #ffd5b8; color: var(--color-text-secondary);">
+                    Assume the comment is <strong>NOT</strong> context-aligned. What claims in the comment lack support from the diff? What contradictions exist between comment and actual changes? ...
+                  </div>
+                </div>
+
+                <div class="branch-block" style="margin-bottom: 6px;">
+                  <div class="branch-toggle" style="cursor: pointer; display: flex; align-items: baseline; gap: 4px;">
+                    <span style="font-weight: 500;">Branch C: Evidence Mapping.</span>
+                    <span style="font-size: 9px; color: var(--color-text-secondary); margin-left: auto; user-select: none;">▶</span>
+                  </div>
+                  <div class="branch-body" style="display: none; margin-top: 4px; padding-left: 8px; border-left: 2px solid #b8d4f8; color: var(--color-text-secondary);">
+                    Map each sentence/claim to diff elements: Which lines correspond to each comment claim? ...
+                  </div>
+                </div>
+
+                <div class="branch-block">
+                  <div class="branch-toggle" style="cursor: pointer; display: flex; align-items: baseline; gap: 4px;">
+                    <span style="font-weight: 500;">Branch D: Context Boundaries.</span>
+                    <span style="font-size: 9px; color: var(--color-text-secondary); margin-left: auto; user-select: none;">▶</span>
+                  </div>
+                  <div class="branch-body" style="display: none; margin-top: 4px; padding-left: 8px; border-left: 2px solid #e8c8f0; color: var(--color-text-secondary);">
+                    Evaluate what the comment should or should not reference: What would require external context not provided? Is the comment’s scope appropriate for the given diff? ...
+                  </div>
+                </div>
+
+              </div>
+
+              <div style="padding: 8px 12px; border-bottom: 1px solid var(--color-border-tertiary);">
+                <div style="font-weight: 500; margin-bottom: 4px;">[Synthesis Process]</div>
+                <div style="color: var(--color-text-secondary);">
+                  • Evidence Weight: Which branch found stronger evidence?<br>
+                  • Contradiction Analysis: Do branches conflict?<br>
+                  • Confidence Assessment: Most reliable path?<br>
+                  • Final Judgment: Based on strongest evidence path
+                </div>
+              </div>
+
+              <div style="padding: 8px 12px; color: var(--color-text-secondary);">
+                <span style="font-weight: 500; color: var(--color-text-primary);">[Output Format]</span> ...<br>
+                <span style="font-weight: 500; color: var(--color-text-primary);">[Example Output]</span> ...
+              </div>
+
+            </div>
           </div>
-          <div class="branch">
-            <div class="bhead"><span class="bnum">3</span><span class="btitle">Evidence Mapping</span><span class="toggle">+</span></div>
-            <div class="bdetail">Build explicit trace links between each comment sentence and specific diff elements.</div>
-          </div>
-          <div class="branch">
-            <div class="bhead"><span class="bnum">4</span><span class="btitle">Context Boundaries</span><span class="toggle">+</span></div>
-            <div class="bdetail">Verify every claim stays within the intended scope of the change.</div>
-          </div>
+
         </div>
+
+        <script>
+        document.querySelectorAll('.branch-toggle').forEach(function(toggle) {
+          toggle.addEventListener('click', function(event) {
+            // Prevent the click from bubbling up to the slide container
+            event.stopPropagation();
+            event.preventDefault();
+            
+            var body = this.closest('.branch-block').querySelector('.branch-body');
+            var label = this.querySelector('span:last-child');
+            var open = body.style.display !== 'none';
+            body.style.display = open ? 'none' : 'block';
+            label.textContent = open ? '▶' : '▼';
+          });
+        });
+        </script>
       </div>
     </section>
 
@@ -485,49 +563,60 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
       <div class="body">
         <div class="two-col" style="margin-bottom:16px;">
           <div class="card">
-            <div class="pill" style="margin-bottom:10px;">RQ1–2 · Annotation set</div>
+            <div class="pill" style="margin-bottom:10px;">RQ1–2 · Offline Human Annotated Set</div>
             <ul class="clean" style="font-size:13.5pt; gap:8px;">
               <li><strong>143</strong> LLM comments · <strong>97</strong> merged PRs · <strong>14</strong> projects</li>
-              <li>5 languages: Java, Python, JS, TS, Kotlin · change types Add / Modify</li>
-              <li>3 SE-researcher annotators · Cohen's κ <strong>0.78–0.84</strong></li>
+              <li><strong>5</strong> languages: Java, Python, JS, TS, Kotlin</li>
+              <li><strong>3</strong> reviewers: Sonnet-4, Qwen3-Coder, and GPT-5.1</li>
+              <li><strong>3</strong> human annotators · Cohen's κ <strong>0.78–0.84</strong></li>
               <li><strong>32</strong> hallucinated (22%) / <strong>111</strong> not (78%)</li>
             </ul>
           </div>
           <div class="card">
-            <div class="pill" style="margin-bottom:10px;">RQ3 · Production set</div>
+            <div class="pill" style="margin-bottom:10px;">RQ3 · Online Production Set</div>
             <ul class="clean" style="font-size:13.5pt; gap:8px;">
-              <li class="ok"><strong>557</strong> comments with developer 👍 / 👎</li>
+              <li><strong>557</strong> comments with developer 👍 / 👎</li>
               <li>From RovoDev Code Reviewer over <strong>3 months</strong></li>
               <li><strong>370</strong> (65%) received a thumbs-up</li>
             </ul>
           </div>
         </div>
-        <div class="card" style="display:flex; gap:26px; align-items:center; flex-wrap:wrap;">
-          <div><span class="tag">JUDGES</span><br><strong>Gemini 3</strong> <span class="muted">(1M ctx)</span> &nbsp;·&nbsp; <strong>GPT-5.1</strong> <span class="muted">(400K ctx)</span> &nbsp;→&nbsp; <strong>8 configs</strong> <span class="muted">(4 strategies × 2 models)</span></div>
-          <div style="margin-left:auto;"><span class="tag">PRODUCTION GENERATORS</span><br><span class="muted">Claude-Sonnet-4 · Qwen3-Coder · GPT-5</span></div>
+        <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+          <div class="pill" style="align-self:flex-start;">
+            8 Different Configurations
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="line-height:1.15;">
+              <span class="tag">2 STATE-OF-THE-ART JUDGES</span><br>
+              <strong>Gemini 3 Pro · GPT-5.1</strong>
+            </div>
+            <div style="line-height:1.15;">
+              <span class="tag">4 STRATEGIES</span><br>
+              <strong>Direct · Few-Shot · Multi-Step Reasoning · Tree of Thoughts</strong>
+            </div>
+          </div>
         </div>
-      </div>
     </section>
 
     <!-- 10. RESEARCH QUESTIONS -->
     <section class="slide">
       <div class="head">
         <div class="kicker">Research Questions</div>
-        <h2>Three questions</h2>
+        <h2>Three questions covering different aspects</h2>
       </div>
       <div class="body">
         <div class="grid" style="gap:16px;">
           <div class="card" style="display:flex; gap:20px; align-items:center; border-left:3px solid var(--accent);">
             <span class="mono accent text-2xl" style="flex:0 0 70px;">RQ1</span>
-            <div><strong class="text-lg">Effectiveness.</strong> &nbsp;How well do the strategies detect hallucinations? <span class="muted">— Precision · Recall · F1</span></div>
+            <div><strong>Effectiveness</strong> &nbsp;<br />To what degree do the assessment strategies in HalluJudge effectively detect hallucinations in code review comments? <span class="muted">(Precision · Recall · F1)</span></div> 
           </div>
-          <div class="card" style="display:flex; gap:20px; align-items:center; border-left:3px solid var(--accent-warn);">
-            <span class="mono warn text-2xl" style="flex:0 0 70px;">RQ2</span>
-            <div><strong class="text-lg">Efficiency.</strong> &nbsp;What is the token and dollar cost per judgment? <span class="muted">— tokens · $ / inference</span></div>
+          <div class="card" style="display:flex; gap:20px; align-items:center; border-left:3px solid var(--accent);">
+            <span class="mono accent text-2xl" style="flex:0 0 70px;">RQ2</span>
+            <div><strong>Efficiency</strong> &nbsp;<br />How efficient is HalluJudge in detecting code review hallucination? <span class="muted">(Tokens · $USD)</span></div>
           </div>
-          <div class="card" style="display:flex; gap:20px; align-items:center; border-left:3px solid var(--accent-ok);">
-            <span class="mono ok text-2xl" style="flex:0 0 70px;">RQ3</span>
-            <div><strong class="text-lg">Alignment.</strong> &nbsp;Do judgments match developer preferences in production? <span class="muted">— consistency · coverage vs 👍/👎</span></div>
+          <div class="card" style="display:flex; gap:20px; align-items:center; border-left:3px solid var(--accent);">
+            <span class="mono accent text-2xl" style="flex:0 0 70px;">RQ3</span>
+            <div><strong>Alignment</strong> &nbsp;<br />To what degree do HalluJudge’s hallucination judgments align with developers’ preferences in practice? <span class="muted">(Consistency · Coverage)</span></div>
           </div>
         </div>
       </div>
@@ -537,63 +626,89 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
     <section class="slide">
       <div class="head">
         <div class="kicker">RQ1 · Effectiveness</div>
-        <h2>Tree of Thoughts + Gemini 3 → F1 <span class="ok">0.85</span></h2>
+        <div class="result-box">
+          <strong>Best configuration:</strong> Tree of Thoughts w/ Gemini 3 Pro achieves an F1 of 0.85.
+        </div>
       </div>
       <div class="body">
         <div class="two-col" style="grid-template-columns:1.35fr 1fr; align-items:center;">
           <div>
-            <svg viewBox="0 0 760 330" width="100%" role="img" aria-label="F1 score by assessment strategy and model">
-              <!-- gridlines + y labels -->
+            <svg viewBox="0 0 800 360" width="100%" role="img" aria-label="F1 score by assessment strategy and model">
+
+              <!-- Y-axis label (fixed, no clipping) -->
+              <text
+                x="25"
+                y="180"
+                transform="rotate(-90 25 180)"
+                font-family="IBM Plex Sans, sans-serif"
+                font-size="12"
+                fill="#8892a4"
+                text-anchor="middle">
+                F1
+              </text>
+
+              <!-- gridlines + y labels (shifted right by +40) -->
               <g font-family="JetBrains Mono, monospace" font-size="11" fill="#8892a4">
-                <line x1="44" y1="20"  x2="740" y2="20"  stroke="#2e3350"/><text x="38" y="24"  text-anchor="end">1.0</text>
-                <line x1="44" y1="85"  x2="740" y2="85"  stroke="#2e3350"/><text x="38" y="89"  text-anchor="end">.75</text>
-                <line x1="44" y1="150" x2="740" y2="150" stroke="#2e3350"/><text x="38" y="154" text-anchor="end">.50</text>
-                <line x1="44" y1="215" x2="740" y2="215" stroke="#2e3350"/><text x="38" y="219" text-anchor="end">.25</text>
-                <line x1="44" y1="280" x2="740" y2="280" stroke="#2e3350"/><text x="38" y="284" text-anchor="end">0</text>
+                <line x1="84" y1="20"  x2="780" y2="20"  stroke="#2e3350"/><text x="78" y="24"  text-anchor="end">1.0</text>
+                <line x1="84" y1="85"  x2="780" y2="85"  stroke="#2e3350"/><text x="78" y="89"  text-anchor="end">.75</text>
+                <line x1="84" y1="150" x2="780" y2="150" stroke="#2e3350"/><text x="78" y="154" text-anchor="end">.50</text>
+                <line x1="84" y1="215" x2="780" y2="215" stroke="#2e3350"/><text x="78" y="219" text-anchor="end">.25</text>
+                <line x1="84" y1="280" x2="780" y2="280" stroke="#2e3350"/><text x="78" y="284" text-anchor="end">0</text>
               </g>
-              <!-- bars: baseline y=280; y(v)=280-v*260 -->
+
+              <!-- bars (shifted +40 in x) -->
+
               <!-- Direct: G .82 / GPT .75 -->
-              <rect class="bar" x="80"  y="66.8" width="46" height="213.2" rx="3" fill="#4f8ef7"/>
-              <rect class="bar" x="129" y="85.0" width="46" height="195.0" rx="3" fill="#a78bfa"/>
-              <!-- Few-Shot: G .79 / GPT .67 -->
-              <rect class="bar" x="254" y="74.6" width="46" height="205.4" rx="3" fill="#4f8ef7"/>
-              <rect class="bar" x="303" y="105.8" width="46" height="174.2" rx="3" fill="#a78bfa"/>
-              <!-- Multi-Step: G .79 / GPT .74 -->
-              <rect class="bar" x="428" y="74.6" width="46" height="205.4" rx="3" fill="#4f8ef7"/>
-              <rect class="bar" x="477" y="87.6" width="46" height="192.4" rx="3" fill="#a78bfa"/>
-              <!-- Tree of Thought: G .85 (winner) / GPT .76 -->
-              <rect class="bar" x="602" y="59.0" width="46" height="221.0" rx="3" fill="#34d399"/>
-              <rect class="bar" x="651" y="82.4" width="46" height="197.6" rx="3" fill="#a78bfa"/>
+              <rect class="bar" x="120" y="66.8" width="46" height="213.2" rx="3" fill="#4f8ef7"/>
+              <rect class="bar" x="169" y="85.0" width="46" height="195.0" rx="3" fill="#a78bfa"/>
+
+              <!-- Few-Shot -->
+              <rect class="bar" x="294" y="74.6" width="46" height="205.4" rx="3" fill="#4f8ef7"/>
+              <rect class="bar" x="343" y="105.8" width="46" height="174.2" rx="3" fill="#a78bfa"/>
+
+              <!-- Multi-Step -->
+              <rect class="bar" x="468" y="74.6" width="46" height="205.4" rx="3" fill="#4f8ef7"/>
+              <rect class="bar" x="517" y="87.6" width="46" height="192.4" rx="3" fill="#a78bfa"/>
+
+              <!-- Tree of Thought -->
+              <rect class="bar" x="642" y="59.0" width="46" height="221.0" rx="3" fill="#34d399"/>
+              <rect class="bar" x="691" y="82.4" width="46" height="197.6" rx="3" fill="#a78bfa"/>
+
               <!-- value labels -->
               <g class="chart-val" font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="500" text-anchor="middle">
-                <text x="103" y="60"  fill="#cdd6e6">.82</text><text x="152" y="78"  fill="#cdd6e6">.75</text>
-                <text x="277" y="68"  fill="#cdd6e6">.79</text><text x="326" y="99"  fill="#cdd6e6">.67</text>
-                <text x="451" y="68"  fill="#cdd6e6">.79</text><text x="500" y="81"  fill="#cdd6e6">.74</text>
-                <text x="625" y="52"  fill="#34d399">.85</text><text x="674" y="76"  fill="#cdd6e6">.76</text>
+                <text x="143" y="60"  fill="#cdd6e6">.82</text><text x="192" y="78"  fill="#cdd6e6">.75</text>
+                <text x="317" y="68"  fill="#cdd6e6">.79</text><text x="366" y="99"  fill="#cdd6e6">.67</text>
+                <text x="491" y="68"  fill="#cdd6e6">.79</text><text x="540" y="81"  fill="#cdd6e6">.74</text>
+                <text x="665" y="52"  fill="#34d399">.85</text><text x="714" y="76"  fill="#cdd6e6">.76</text>
               </g>
+
               <!-- x labels -->
               <g font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#8892a4" text-anchor="middle">
-                <text x="127" y="303">Direct</text>
-                <text x="301" y="303">Few-Shot</text>
-                <text x="475" y="303">Multi-Step</text>
-                <text x="649" y="303" fill="#34d399" font-weight="600">Tree of Thought</text>
+                <text x="167" y="303">Direct</text>
+                <text x="341" y="303">Few-Shot</text>
+                <text x="515" y="303">Multi-Step</text>
+                <text x="689" y="303" fill="#34d399" font-weight="600">Tree of Thought</text>
               </g>
+
               <!-- legend -->
-              <g font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#8892a4">
-                <rect x="250" y="318" width="12" height="12" rx="2" fill="#4f8ef7"/><text x="268" y="328">Gemini 3</text>
-                <rect x="370" y="318" width="12" height="12" rx="2" fill="#a78bfa"/><text x="388" y="328">GPT-5.1</text>
+              <g font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#8892a4"
+                transform="translate(400,350)" text-anchor="start">
+
+                <rect x="-120" y="-10" width="12" height="12" rx="2" fill="#4f8ef7"/>
+                <text x="-102" y="0">Gemini 3 Pro</text>
+
+                <rect x="40" y="-10" width="12" height="12" rx="2" fill="#a78bfa"/>
+                <text x="58" y="0">GPT-5.1</text>
               </g>
+
             </svg>
           </div>
+        </div>
+      </div>
           <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="result-box best" style="padding:16px 20px;">
-              <div class="tag" style="color:var(--accent-ok);">BEST — TREE OF THOUGHTS · GEMINI 3</div>
-              <div class="mono text-lg" style="margin-top:6px;">P 0.85 &nbsp; R 0.85 &nbsp; <strong class="ok">F1 0.85</strong></div>
-            </div>
             <ul class="clean" style="font-size:13.5pt;">
-              <li>Tree of Thoughts ranks <strong>1st</strong>, Direct <strong>2nd</strong> on both models.</li>
-              <li>Few-shot &amp; multi-step <strong>underperform</strong> despite higher cost.</li>
-              <li>Gemini 3 is more stable (F1 range 0.06 vs 0.09); variation is driven mainly by <strong>recall</strong>.</li>
+              <li>Across Both Models - Tree of Thoughts ranks <strong>1st</strong>, Direct ranks <strong>2nd</strong>.</li>
+              <li>Gemini 3 Pro is more stable across strategies (F1 ranges between 0.06 vs 0.09); variation is driven mainly by <strong>recall</strong>.</li>
             </ul>
           </div>
         </div>
@@ -603,31 +718,21 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
     <!-- 12. RQ2 RESULTS -->
     <section class="slide">
       <div class="head">
-        <div class="kicker warn">RQ2 · Efficiency</div>
-        <h2>Effective <em>and</em> cheap — <span class="warn">$0.009</span> per judgment</h2>
+        <div class="kicker">RQ2 · Efficiency</div>
+        <div class="result-box">
+          <strong>Trade-off:</strong> Direct is the cheapest; <strong>Tree of Thoughts</strong> is the most accurate at the highest cost.
+        </div>
       </div>
       <div class="body">
-        <div class="two-col" style="grid-template-columns:1.1fr 1fr;">
-          <table class="rtable">
-            <thead><tr><th>Strategy</th><th>Judge</th><th style="text-align:right;">Avg cost / judgment</th></tr></thead>
-            <tbody>
-              <tr class="best"><td>Direct</td><td class="mdl">Gemini 3</td><td class="num">$0.009</td></tr>
-              <tr><td>Direct</td><td class="mdl">GPT-5.1</td><td class="num">$0.004</td></tr>
-              <tr><td>+ Tree of Thoughts</td><td class="mdl">Gemini 3</td><td class="num">+$0.005</td></tr>
-              <tr><td>+ Tree of Thoughts</td><td class="mdl">GPT-5.1</td><td class="num">+$0.007</td></tr>
-              <tr><td>+ Multi-Step</td><td class="mdl">Gemini 3</td><td class="num">+$0.003</td></tr>
-              <tr><td>+ Few-Shot</td><td class="mdl">Gemini 3</td><td class="num">+$0.001</td></tr>
-            </tbody>
+        <div class="two-col" style="grid-template-columns:1.1fr 1fr; margin-bottom: 24px;">
+          <img src="./effiency_compare.png" alt="Charts comparing Gemini 3 and GPT 5.1 token counts and inference costs across different prompting strategies" style="max-width: 100%; height: auto; display: block;">
+        </div>
           </table>
-          <div style="display:flex; flex-direction:column; gap:14px;">
+          <div style="display:flex; flex-direction:column; gap:17px;">
             <ul class="clean" style="font-size:13.5pt;">
-              <li>Direct uses ~<strong>2,784–3,315</strong> input and <strong>81–89</strong> output tokens.</li>
-              <li>Tree of Thoughts buys accuracy with extra reasoning tokens — the highest cost.</li>
-              <li class="muted" style="font-size:12pt;">Pricing /1M tokens (in/out): Gemini 3 $2.00 / $12.00 · GPT-5.1 $1.25 / $10.00</li>
+              <li>On average, direct uses <strong>2.7k–3.3k</strong> input and <strong>81–89</strong> output tokens, costing <strong>$0.004-$0.009</strong> per inference.</li>
+              <li>Tree of Thoughts buys accuracy with extra reasoning tokens, costing an additional <strong>$0.005-$0.007</strong> on average per inference.</li>
             </ul>
-            <div class="result-box warn">
-              <strong>Trade-off:</strong> Direct is the cheapest; <strong>Tree of Thoughts</strong> is the most accurate at the highest cost — both far below human annotation.
-            </div>
           </div>
         </div>
       </div>
@@ -636,58 +741,35 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
     <!-- 13. RQ3 RESULTS -->
     <section class="slide">
       <div class="head">
-        <div class="kicker ok">RQ3 · Developer Alignment</div>
-        <h2>Aligned with real developer preferences</h2>
+        <div class="kicker">RQ3 · Alignment</div>
+        <div class="result-box">
+          Both Direct and Tree of Thoughts strategies are <strong>well aligned</strong> with developer preferences.
+        </div>
       </div>
       <div class="body">
         <div class="two-col" style="grid-template-columns:1.25fr 1fr; align-items:center;">
           <table class="rtable">
-            <thead><tr><th>Strategy</th><th>Judge</th><th style="text-align:right;">Consist.</th><th style="text-align:right;">Cover.</th><th style="text-align:right;">Avg</th></tr></thead>
+            <thead><tr><th>Judge</th><th>Model</th><th style="text-align:right;">Consistency</th><th style="text-align:right;">Coverage</th><th style="text-align:right;">Average</th></tr></thead>
             <tbody>
-              <tr class="best"><td>Direct</td><td class="mdl">Gemini 3</td><td class="num">0.69</td><td class="num">0.65</td><td class="num"><strong>0.67</strong></td></tr>
-              <tr><td>Tree of Thoughts</td><td class="mdl">Gemini 3</td><td class="num">0.67</td><td class="num">0.65</td><td class="num">0.66</td></tr>
-              <tr><td>Multi-Step</td><td class="mdl">Gemini 3</td><td class="num">0.68</td><td class="num">0.63</td><td class="num">0.65</td></tr>
-              <tr><td>Few-Shot</td><td class="mdl">Gemini 3</td><td class="num">0.67</td><td class="num">0.62</td><td class="num">0.64</td></tr>
-              <tr><td>Tree of Thoughts</td><td class="mdl">GPT-5.1</td><td class="num">0.72</td><td class="num">0.54</td><td class="num">0.63</td></tr>
-              <tr><td>Multi-Step</td><td class="mdl">GPT-5.1</td><td class="num">0.70</td><td class="num">0.57</td><td class="num">0.63</td></tr>
+              <tr><td>Tree of Thoughts</td><td class="mdl">Gemini 3 Pro</td><td class="num">0.67</td><td class="num"><strong>0.65</strong></td><td class="num"><u>0.66</u></td></tr>
+              <tr class="best"><td>Direct</td><td class="mdl">Gemini 3 Pro</td><td class="num">0.69</td><td class="num"><strong>0.65</strong></td><td class="num"><strong>0.67</strong></td></tr>
+              <tr><td>Few Shot</td><td class="mdl">Gemini 3 Pro</td><td class="num">0.67</td><td class="num">0.62</td><td class="num">0.64</td></tr>
+              <tr><td>Multi-Step Reasoning</td><td class="mdl">Gemini 3 Pro</td><td class="num">0.68</td><td class="num"><u>0.63</u></td><td class="num">0.65</td></tr>
+              <tr><td>Tree of Thoughts</td><td class="mdl">GPT-5</td><td class="num"><strong>0.72</strong></td><td class="num">0.54</td><td class="num">0.61</td></tr>
+              <tr><td>Direct</td><td class="mdl">GPT-5</td><td class="num">0.69</td><td class="num">0.54</td><td class="num">0.61</td></tr>
+              <tr><td>Multi-Step Reasoning</td><td class="mdl">GPT-5</td><td class="num"><u>0.70</u></td><td class="num">0.57</td><td class="num">0.63</td></tr>
+              <tr><td>Few Shot</td><td class="mdl">GPT-5</td><td class="num">0.69</td><td class="num">0.53</td><td class="num">0.60</td></tr>
             </tbody>
           </table>
           <ul class="clean" style="font-size:13.5pt;">
-            <li class="ok">Up to <strong>72%</strong> of comments judged non-hallucinated also got a 👍 <span class="muted">(consistency)</span>.</li>
-            <li>Captures up to <strong>65%</strong> of all 👍 comments <span class="muted">(coverage)</span>.</li>
-            <li>ToT &amp; Direct with <strong>Gemini 3</strong> top again — consistent with the annotation results.</li>
+            <li>Up to <strong>72%</strong> of all comments that were judged as non-hallucinated also received 👍. <span class="muted">(consistency)</span></li>
+            <li>Up to <strong>65%</strong> of all comments that received 👍 were also judged as non-hallucinated. <span class="muted">(coverage)</span></li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- 14. DISCUSSION -->
-    <section class="slide">
-      <div class="head">
-        <div class="kicker">Discussion</div>
-        <h2>What we learned</h2>
-      </div>
-      <div class="body">
-        <div class="grid" style="gap:16px;">
-          <div class="card">
-            <div style="font-weight:600;" class="text-lg">1 · Ensembling doesn't help</div>
-            <p class="muted" style="font-size:13.5pt; margin-top:8px;">
-              Averaging all four strategies scores <strong>F1 0.81</strong> (Gemini 3) and <strong>0.73</strong> (GPT-5.1) — both <strong>below Tree of Thoughts alone (0.85)</strong>.
-              The strategies don't provide complementary signals.
-            </p>
-          </div>
-          <div class="card" style="border-left:3px solid var(--accent-ok);">
-            <div style="font-weight:600;" class="text-lg ok">2 · Judgments are evidence-grounded</div>
-            <p class="muted" style="font-size:13.5pt; margin-top:8px;">
-              HalluJudge flags an invalid <span class="mono">isPresent()</span> suggestion by citing <span class="mono">length()</span> in the diff — the return type is <strong>String, not Optional</strong>.
-              Tree-of-Thoughts branches add <strong>causal analysis</strong> the direct strategy misses.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 15. IMPLICATIONS -->
+    <!-- 14. IMPLICATIONS -->
     <section class="slide">
       <div class="head">
         <div class="kicker">Implications</div>
@@ -697,43 +779,46 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
         <div class="two-col">
           <div class="card" style="border-top:3px solid var(--accent);">
             <div class="text-lg" style="font-weight:600; margin-bottom:8px;">A practical safeguard</div>
-            <p class="muted" style="font-size:14pt;">Drop HalluJudge in as a <strong>filtering / validation layer</strong> to keep plausible-but-wrong comments away from developers — directly addressing a key barrier to <strong>adoption and trust</strong>.</p>
+            <p class="muted" style="font-size:14pt;">Drop HalluJudge in as a <strong> gating layer</strong> to keep plausible-but-wrong comments away from developers — addressing a key barrier to <strong>adoption and trust</strong>.</p>
           </div>
           <div class="card" style="border-top:3px solid var(--accent-ok);">
             <div class="text-lg" style="font-weight:600; margin-bottom:8px;">Cost-effective &amp; explainable</div>
-            <p class="muted" style="font-size:14pt;">A <strong>$0.009</strong> alternative to expensive human annotation — with interpretable, <strong>evidence-based reasons</strong> behind every judgment.</p>
+            <p class="muted" style="font-size:14pt;">As low as <strong>$0.009</strong> per judgement — with interpretable, <strong>evidence-based reasons</strong> behind every judgment.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 16. CONCLUSION -->
+    <!-- 15. CONCLUSION -->
     <section class="slide">
       <div class="head">
         <div class="kicker">Conclusion</div>
         <h2>HalluJudge</h2>
-        <p class="muted text-lg" style="margin-top:6px;">The first reference-free hallucination detector for context-misaligned code-review comments — validated at enterprise scale against production developer signals.</p>
+        <p class="muted text-lg" style="margin-top:6px;">An accurate and efficient reference-free hallucination detector for context-misaligned code-review comments — validated at enterprise scale against production developer signals.</p>
       </div>
       <div class="body">
         <div class="grid" style="grid-template-columns:repeat(3,1fr); gap:16px;">
           <div class="card center" style="border-bottom:3px solid var(--accent-ok);">
+            <div style="font-weight:600; margin-top:4px;">Up to</div>
             <div class="mono ok" style="font-size:34pt; font-weight:500;">0.85</div>
-            <div style="font-weight:600; margin-top:4px;">Effectiveness</div>
-            <div class="muted" style="font-size:12.5pt;">F1 — Tree of Thoughts + Gemini 3</div>
+            <div class="muted" style="font-size:12.5pt;">(F1 score)</div>
+            <div style="font-weight:600; margin-top:4px;">in Effectiveness</div>
           </div>
-          <div class="card center" style="border-bottom:3px solid var(--accent-warn);">
-            <div class="mono warn" style="font-size:34pt; font-weight:500;">$0.009</div>
-            <div style="font-weight:600; margin-top:4px;">Efficiency</div>
-            <div class="muted" style="font-size:12.5pt;">per hallucination detection</div>
+          <div class="card center" style="border-bottom:3px solid var(--accent-ok);">
+            <div style="font-weight:600; margin-top:4px;">As low as</div>
+            <div class="mono ok" style="font-size:34pt; font-weight:500;">$0.009</div>
+            <div class="muted" style="font-size:12.5pt;">(per judgement)</div>
+            <div style="font-weight:600; margin-top:4px;">in Efficiency</div>
           </div>
-          <div class="card center" style="border-bottom:3px solid var(--accent);">
-            <div class="mono accent" style="font-size:34pt; font-weight:500;">67%</div>
-            <div style="font-weight:600; margin-top:4px;">Alignment</div>
-            <div class="muted" style="font-size:12.5pt;">avg agreement with developers</div>
+          <div class="card center" style="border-bottom:3px solid var(--accent-ok);">
+            <div style="font-weight:600; margin-top:4px;">Up to</div>
+            <div class="mono ok" style="font-size:34pt; font-weight:500;">67%</div>
+            <div class="muted" style="font-size:12.5pt;">(avg agreement with developers)</div>
+            <div style="font-weight:600; margin-top:4px;">in Alignment</div>
           </div>
         </div>
         <div class="result-box best" style="margin-top:20px; text-align:center; padding:16px 22px;">
-          <span class="text-lg">A practical safeguard that reduces developers' exposure to hallucinated comments — <strong>fostering trust in AI-assisted code review</strong>.</span>
+          <span class="text-lg">A practical safeguard that reduces developers' exposure to hallucinated comments<br>—<br>Fostering trust in AI-assisted code review</span>
         </div>
       </div>
     </section>
@@ -751,7 +836,6 @@ rect.bar { transform: scaleY(0); transform-box: fill-box; transform-origin: bott
         Kla Tantithamthavorn · Hong Yi Lin · Patanamon Thongtanunam · Wachiraphan Charoenwet · <b>Minwoo Jeong</b> · Ming Wu
       </p>
       <p style="margin-top:18px;"><a class="arxiv interactive" href="https://arxiv.org/abs/2601.19072" target="_blank" rel="noopener">arXiv:2601.19072</a></p>
-      <p class="aff" style="margin-top:14px;">HalluJudge · FSE Companion '26 · Montréal, QC</p>
     </section>
 
     <!-- chrome -->
